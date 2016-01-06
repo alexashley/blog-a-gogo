@@ -1,7 +1,9 @@
-package blag
+package main
 
 import (
-	"net/http"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 )
 
 var (
@@ -13,7 +15,7 @@ var (
 	POST_DIR   string = "/post/"
 	POST_FN    string = "posts.json" // post metadata in json format
 	ROUTES_FN  string = "routes.json"
-	PORT_NUM   int    = 80 // default http port
+	PORT_NUM   string = ":80" // default http port
 )
 
 type Resources struct {
@@ -27,37 +29,35 @@ type Resources struct {
 type Blog struct {
 	Paths  Resources
 	Routes map[string]string // maps URLs to files, e.g., site.com/about -> tmpl/site.html
-	Posts  []Post            // post objects in memory
-	Port   int
+	Posts  []Post            // post objects in memory TODO: sort by date
+	Port   string
 }
 
-func New() Blog {
-	paths := Resources{StaticDir: STATIC_DIR,
-		TmplDir:  TMPL_DIR,
-		BaseTmpl: BASE_TMPL,
-		ErrorDir: ERROR_DIR,
-		PostDir:  POST_DIR}
+func NewBlog(filename string) *Blog {
+	var paths Resources
+	if filename != "" {
+		LoadFromJSON(filename, &paths)
+	} else {
+		paths = Resources{StaticDir: STATIC_DIR,
+			TmplDir:  TMPL_DIR,
+			BaseTmpl: BASE_TMPL,
+			ErrorDir: ERROR_DIR,
+			PostDir:  POST_DIR}
+	}
+	routes := make(map[string]string)
+	posts := make([]Post, 0)
+	LoadFromJSON(ROUTES_FN, &routes)
+	LoadFromJSON(POST_FN, &posts)
 
-	routes := LoadRoutes(ROUTES_FN)
-	posts := LoadPosts(POST_FN)
-
-	return Blog{Paths: paths, Routes: routes, Posts: posts, Port: PORT_NUM}
+	return &Blog{Paths: paths, Routes: routes, Posts: posts, Port: PORT_NUM}
 }
 
-func LoadRoutes(fn string) map[string]string {
-	return make(map[string]string)
-}
-
-func (b *Blog) Run() {
-
-}
-
-// serves files from the static directory
-func staticHandler(w http.ResponseWriter, r *http.Request) {
-
-}
-
-// serves custom error pages (e.g., 404, 503)
-func errorHandler(w http.ResponseWriter, r *http.Request) {
-
+func LoadFromJSON(filename string, obj interface{}) {
+	j, err := ioutil.ReadFile(filename)
+	if err != nil {
+		fmt.Println("Unable to read from " + filename)
+	}
+	if err = json.Unmarshal(j, obj); err != nil {
+		fmt.Println("Error parsing JSON from " + filename)
+	}
 }
