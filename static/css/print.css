@@ -1,0 +1,28 @@
+html,
+body {
+  margin: 0;
+  padding: 0; }
+
+body {
+  font-family: sans-serif;
+  width: 100%;
+  height: 100%;
+  margin-left: -100px;
+  margin-right: -100px; }
+
+.buffer {
+  padding-top: 0px; }
+
+.content {
+  margin: 0;
+  width: 100%;
+  height: 100%; }
+
+#resume-bar ul li {
+  display: inline;
+  margin-left: 0; }
+
+#nav {
+  display: none; }
+
+/*# sourceMappingURL=print.css.map */

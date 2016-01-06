@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Posts</title>
+    <link rel="stylesheet" href="/static/css/style.css" type="text/css">
+</head>
+<body>
+<div id="nav">
+    <span class="title" > My Blag </span>
+    <ul>
+        <li> <a href="{{ .URL }}about"> about </a></li>
+        <li> <a href="{{ .URL }}blog"> blog </a></li>
+        <li> <a href="{{ .URL }}contact"> contact </a></li>
+    </ul>
+</div>
+<div class="buffer">
+    {{ range $idx, $title := .Posts }}
+    <a href="http://alexashley.me/post/{{ $title }}">
+    <div class="listing">
+        <h2 class="article-title">{{ $title }}</h2>
+    </div>
+    </a>
+    {{ end }}
+</div>
+</html>

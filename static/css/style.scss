@@ -1,0 +1,129 @@
+@import 'reset';
+
+$fonts: sans-serif;
+$bg: #eee;
+$article-color:#252525;
+
+$header-color:#268bd2;
+$header-height:60px;
+$font-color:#fdf6e3;
+$hover-color:#6c71c4;
+
+body {
+    font-family:$fonts;
+    /* Seamless paper texture background pattern from subtlepatterns.com */
+    background-image: url("../img/seamless_paper_texture.png");
+    color:$font-color;
+}
+
+a {
+    text-decoration:none;
+}
+
+a:visited {
+    color:$hover-color;
+}
+
+a:link {
+    color:$header-color;
+}
+
+hr {
+    margin:0;
+    padding:0;
+}
+
+#resume-bar {
+    margin-bottom:-10px;
+}
+
+#resume-bar ul {
+    display:inline-block;
+    list-style-type:none;
+    text-align:center;
+}
+
+#resume-bar ul li {
+    display:inline-block;
+    margin-left:1.5em;
+}
+    
+.title {
+    font-size:32px;
+    margin-left:1em;
+    line-height:$header-height;
+}
+
+.article-title {
+    padding:0;
+    margin:0;
+    margin-left:0.5em;
+    width:100%;
+    color:$article-color;
+}
+
+.article-box {
+    margin-left:1em;
+    width:90%;
+}
+
+.buffer {
+    clear:both;
+    padding-top:100px;
+}
+
+.content {
+    margin:0 auto;
+    padding-bottom:20px;
+    background-color:$bg;
+    width:70%;
+    line-height:1.4;
+    float:none;
+    color:$article-color;
+}
+
+.listing {
+    @extend .content;
+    padding-bottom:20px;
+    margin-bottom:30px;
+}
+
+#nav {
+    width:100%;
+    height:$header-height;
+    position:fixed;
+    background-color:$header-color;
+}
+
+#nav ul {
+    margin:0;
+    padding:0;
+    float:right;
+    height:$header-height;
+    display:inline-block;
+    list-style-type:none;
+    text-align:center;
+    
+}
+
+#nav ul li {
+    display:inline-block;
+    height:100%;
+    width:75px; 
+    vertical-align:middle;
+    line-height:$header-height;
+}
+
+#nav ul li a {
+    color:$font-color;
+    display:block;
+}
+#nav ul li a:hover {
+    background-color:$hover-color;
+    color:$article-color;
+}
+
+#nav ul li img {
+    vertical-align:middle;
+}
+
