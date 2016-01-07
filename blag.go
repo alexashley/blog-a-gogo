@@ -17,17 +17,17 @@ type Post struct {
 }
 
 type Blog struct {
-	Posts     []Post            // post objects in memory
-	Resources map[string]string // about/ -> tmpl/about.html
-	URL       string
+	Posts  []Post            // post objects in memory
+	Routes map[string]string // about/ -> tmpl/about.html
+	URL    string
 }
 
 func NewBlog(resFile string, postFile string, url string) *Blog {
 	posts := make([]Post, 0)
-	resources := make(map[string]string)
+	routes := make(map[string]string)
 	LoadFromJSON(postFile, &posts)
-	LoadFomJSON(resFile, &resources)
-	return &Blog{Posts: posts, Resources: resources, URL: url}
+	LoadFromJSON(resFile, &routes)
+	return &Blog{Posts: posts, Routes: routes, URL: url}
 }
 
 func LoadFromJSON(filename string, obj interface{}) {

@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
-	"os"
+	"text/template"
 	"time"
 )
 
@@ -13,7 +12,7 @@ var (
 	b *Blogger
 	// initialization constants
 	STATIC_DIR string = "/static/"
-	TMPL_DIR   string = "/tmpl/"
+	TMPL_DIR   string = "tmpl/"
 	POST_DIR   string = "/post/"
 	POST_FN    string = "posts.json"
 	ROUTES_FN  string = "routes.json"
@@ -41,7 +40,7 @@ type Blogger struct {
 func NewBlogger(answer string) *Blogger {
 	paths := Resources{StaticDir: STATIC_DIR, TmplDir: TMPL_DIR, PostDir: POST_DIR}
 	sessions := make(map[string]Session)
-	blag := NewBlog(POST_FN, SITE_URL)
+	blag := NewBlog(ROUTES_FN, POST_FN, SITE_URL)
 	return &Blogger{Site: blag, ActiveSessions: sessions, Paths: paths, Answer: answer}
 }
 
@@ -70,11 +69,9 @@ func pageHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	t, err := template.ParseFiles(filename)
-	if err != nil {
-		panic(err)
-	}
-	if err = t.Execute(w, b); err != nil {
+	t := template.Must(template.ParseFiles(filename, b.Paths.TmplDir+"base.html"))
+
+	if err := t.ExecuteTemplate(w, "base", b); err != nil {
 		fmt.Println(err)
 	}
 }
