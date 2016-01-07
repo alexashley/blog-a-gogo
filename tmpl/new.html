@@ -1,0 +1,25 @@
+{{ define "head" }} <title> new post </title> {{ end }}
+
+{{ define "body" }}
+    <h2 class="article-title"> create a new post </h2>
+    <hr>
+    <div class="article-box">
+        <form action="/save/" method="POST">
+            <div>
+                <label>Title:</label>
+                <input type="text" name="title"></input>
+            </div>
+            <div>
+                <label> Description</label>
+                <input type="text" name="blurb"></input>
+            </div>
+            <div>
+                <label> Content (html) </label>
+                <textarea name="content"></textarea>
+            </div>
+            <div class="button">    
+                <button type="submit">Post!</button>
+            </div>
+        </form>
+    </div>
+{{ end }}   

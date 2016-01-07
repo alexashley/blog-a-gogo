@@ -3,31 +3,34 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"time"
 )
 
 type Post struct {
-	Title    string
-	Body     template.HTML
-	Filename string
-	Blurb    string
-	Date     time.Time
+	Title string
+	Body  []byte
+	Blurb string
+	Date  time.Time
 }
 
 type Blog struct {
-	Posts  []Post            // post objects in memory
-	Routes map[string]string // about/ -> tmpl/about.html
+	Posts  map[string]Post   // postID -> post struct
+	Routes map[string]string // about -> tmpl/about.html
 	URL    string
 }
 
 func NewBlog(resFile string, postFile string, url string) *Blog {
-	posts := make([]Post, 0)
+	posts := make(map[string]Post)
 	routes := make(map[string]string)
 	LoadFromJSON(postFile, &posts)
 	LoadFromJSON(resFile, &routes)
 	return &Blog{Posts: posts, Routes: routes, URL: url}
+}
+
+func (b *Blog) SavePosts(filename string) {
+	data, _ := json.MarshalIndent(b.Posts, "", "\t")
+	ioutil.WriteFile(filename, data, 0644)
 }
 
 func LoadFromJSON(filename string, obj interface{}) {

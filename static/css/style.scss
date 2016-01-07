@@ -33,6 +33,23 @@ hr {
     padding:0;
 }
 
+form {
+    margin:0 auto;
+    width:100%;
+}
+
+textarea {
+    vertical-align:top;
+    height:300px;
+    resize:vertical;
+    font:$fonts;
+    width:100%;
+}
+
+input {
+    width:100%;
+}
+
 #resume-bar {
     margin-bottom:-10px;
 }
@@ -84,8 +101,12 @@ hr {
 
 .listing {
     @extend .content;
-    padding-bottom:20px;
+    height:50px;
     margin-bottom:30px;
+}
+.listing p {
+    margin:0;
+    margin-left:0.75em;
 }
 
 #nav {

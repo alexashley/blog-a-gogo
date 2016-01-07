@@ -3,15 +3,15 @@
 <html>
 <head>
     {{ template "head" . }} 
-    <link rel="stylesheet" href="{{ .Paths.StaticDir }}css/style.css" type="text/css">
+    <link rel="stylesheet" href="{{.Paths.StaticDir }}css/style.css" type="text/css">
 </head>
 <body>
 <div id="nav">
-    <span class="title"> My Blag </span>
+    <span class="title">My Blag </span>
     <ul>
-        <li> <a href="about"> about </a></li>
-        <li> <a href="blog"> blog </a></li>
-        <li> <a href="contact"> contact </a></li>
+        <li> <a href="{{ .Site.URL }}about"> about </a></li>
+        <li> <a href="{{ .Site.URL }}blog"> blog </a></li>
+        <li> <a href="{{ .Site.URL }}contact"> contact </a></li>
     </ul>
 </div>
 <div class="buffer">
