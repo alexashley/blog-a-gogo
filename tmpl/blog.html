@@ -12,7 +12,7 @@
     </style>
     {{ $url := .Site.URL }} 
     {{ range $postID, $post := .Site.Posts }}
-        <!--a href="{{ $url }}post/{{ $postID }}"-->
+        <a href="{{ $url }}post/{{ $postID }}">
         <div class="listing">
         <h2 class="article-title">{{ $post.Title }}</h2>
         <p> {{ $post.Blurb }} </p>

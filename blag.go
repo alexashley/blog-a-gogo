@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"time"
 )
 
 type Post struct {
 	Title string
-	Body  []byte
+	Body  template.HTML
 	Blurb string
 	Date  time.Time
 }

@@ -14,12 +14,11 @@ var (
 	b *Blogger
 	// initialization constants
 	STATIC_DIR string = "/static/"
-	/*TMPL_DIR   string = "tmpl/"*/
-	BASE_TMPL string = "tmpl/base.html"
-	POST_DIR  string = "posts/"
-	POST_FN   string = "posts.json"
-	ROUTES_FN string = "routes.json"
-	SITE_URL  string = "http://localhost/"
+	BASE_TMPL  string = "tmpl/base.html"
+	POST_DIR   string = "posts/"
+	POST_FN    string = "posts.json"
+	ROUTES_FN  string = "routes.json"
+	SITE_URL   string = "http://localhost/"
 )
 
 type Session struct {
@@ -87,22 +86,19 @@ func pageHandler(w http.ResponseWriter, r *http.Request) {
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.PostFormValue("title")
 	blurb := r.PostFormValue("blurb")
-	content := []byte(r.PostFormValue("content"))
-	fmt.Println("POST TITLE: " + title)
+	content := template.HTML(r.PostFormValue("content"))
 	t := time.Now()
 	p := Post{Title: title, Body: content, Blurb: blurb, Date: t}
 	postID := strconv.FormatInt(t.Unix(), 10)
 	b.Site.Posts[postID] = p
 	fn := b.Paths.PostDir + postID + ".txt"
-	fmt.Println("Saving post " + fn)
-	ioutil.WriteFile(fn, content, 0666 /* ooh spoky! */)
+	ioutil.WriteFile(fn, []byte(content), 0666 /* ooh spoky! */)
 	b.Site.SavePosts(POST_FN)
 	http.Redirect(w, r, "/post/"+postID, http.StatusFound)
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	b.CurrID = r.URL.Path[len("/post/"):]
-	// := b.Site.Posts[postID]
 	renderTemplate(w, b.Site.Routes["post"])
 }
 

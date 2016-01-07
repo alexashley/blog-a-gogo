@@ -30,7 +30,7 @@ textarea {
   vertical-align: top;
   height: 300px;
   resize: vertical;
-  font: sans-serif;
+  font-family: sans-serif;
   width: 100%; }
 
 input {
