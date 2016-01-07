@@ -1,45 +1,48 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"flag"
 	"html/template"
-	"io/ioutil"
-	"time"
+	"io"
+	"log"
+	//"net/http"
 )
 
-type Post struct {
-	Title string
-	Body  template.HTML
-	Blurb string
-	Date  time.Time
-}
+var (
+	cssDir     = flag.String("cssDir", "css/", "Directory containing css files")
+	tmplDir    = flag.String("tmplDir", "tmpl/", "Directory containing Go html templates")
+	baseTmpl   = flag.String("base", "base.tmpl", "Master template. Should be in tmplDir")
+	postTmpl   = flag.String("post", "post.tmpl", "Template to be used for blog posts")
+	contentDir = flag.String("contentDir", "content/", "Posts & static pages go here")
+	outDir     = flag.String("outDir", "out/", "Processed pages are output here")
+	watch      = flag.Bool("watch", true, "Watch contentDir for changes")
+	host       = flag.String("host", "localhost", "Hostname")
+	port       = flag.String("port", ":8080", "Port for http.ListenAndServe")
+)
 
-type Blog struct {
-	Posts  map[string]Post   // postID -> post struct
-	Routes map[string]string // about -> tmpl/about.html
+type Page struct {
+	Title  string
+	Body   []byte
 	URL    string
+	cssDir string
+	Date   string
 }
 
-func NewBlog(resFile string, postFile string, url string) *Blog {
-	posts := make(map[string]Post)
-	routes := make(map[string]string)
-	LoadFromJSON(postFile, &posts)
-	LoadFromJSON(resFile, &routes)
-	return &Blog{Posts: posts, Routes: routes, URL: url}
-}
-
-func (b *Blog) SavePosts(filename string) {
-	data, _ := json.MarshalIndent(b.Posts, "", "\t")
-	ioutil.WriteFile(filename, data, 0644)
-}
-
-func LoadFromJSON(filename string, obj interface{}) {
-	j, err := ioutil.ReadFile(filename)
-	if err != nil {
-		fmt.Println("Unable to read from " + filename)
+func renderTemplate(w io.Writer, filename string, p Page) {
+	t := template.Must(template.ParseFiles(filename, *tmplDir+*baseTmpl))
+	if err := t.ExecuteTemplate(w, "base", p); err != nil {
+		log.Fatal("Error parsing template " + filename)
 	}
-	if err = json.Unmarshal(j, obj); err != nil {
-		fmt.Println("Error parsing JSON from " + filename)
-	}
+}
+
+// generatePosts processes the files in contentDir and places the HTML in outDir
+// *.md -> html -> rendered w/ postTmpl (inherits from baseTmpl)
+// .tmpl -> rendered w/ baseTmpl
+func generateSite() {
+
+}
+
+func main() {
+	flag.Parse()
+
 }
