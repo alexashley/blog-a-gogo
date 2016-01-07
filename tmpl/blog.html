@@ -15,7 +15,7 @@
 </div>
 <div class="buffer">
     {{ range $idx, $title := .Posts }}
-    <a href="http://alexashley.me/post/{{ $title }}">
+    <a href="{{ .URL }}{{ $title }}">
     <div class="listing">
         <h2 class="article-title">{{ $title }}</h2>
     </div>

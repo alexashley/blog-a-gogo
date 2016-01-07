@@ -1,0 +1,23 @@
+{{ define "base" }} 
+<!DOCTYPE html>
+<html>
+<head>
+    {{ template "head" . }} 
+    <link rel="stylesheet" href="{{ .Paths.StaticDir }}css/style.css" type="text/css">
+</head>
+<body>
+<div id="nav">
+    <span class="title"> My Blag </span>
+    <ul>
+        <li> <a href="{{ .Site.URL }}/about"> about </a></li>
+        <li> <a href="{{ .Site.URL }}/blog"> blog </a></li>
+        <li> <a href="{{ .Site.URL }}/contact"> contact </a></li>
+    </ul>
+</div>
+<div class="buffer">
+<div class="content">
+    {{ template "body" . }}   
+</div>
+</div>
+</html>
+{{ end }} 

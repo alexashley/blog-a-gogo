@@ -1,4 +1,4 @@
 # Blag
 
-A small blogging framework for Go
+A small blogging framework for Go. 
 

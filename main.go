@@ -5,21 +5,53 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
 var (
-	blog      *Blog
-	staticDir string
+	b *Blogger
+	// initialization constants
+	STATIC_DIR string = "/static/"
+	TMPL_DIR   string = "/tmpl/"
+	POST_DIR   string = "/post/"
+	POST_FN    string = "posts.json"
+	ROUTES_FN  string = "routes.json"
+	SITE_URL   string = "localhost/"
 )
 
+type Session struct {
+	ExpirDate time.Time
+	// attempts?
+}
+
+type Resources struct {
+	StaticDir string
+	TmplDir   string
+	PostDir   string
+}
+
+type Blogger struct {
+	Site           *Blog
+	ActiveSessions map[string]Session // r.RemoteAddr -> Session
+	Paths          Resources
+	Answer         string
+}
+
+func NewBlogger(answer string) *Blogger {
+	paths := Resources{StaticDir: STATIC_DIR, TmplDir: TMPL_DIR, PostDir: POST_DIR}
+	sessions := make(map[string]Session)
+	blag := NewBlog(POST_FN, SITE_URL)
+	return &Blogger{Site: blag, ActiveSessions: sessions, Paths: paths, Answer: answer}
+}
+
 func staticHandler(w http.ResponseWriter, r *http.Request) {
-	filename := r.URL.Path[len(staticDir):]
+	filename := r.URL.Path[len(b.Paths.StaticDir):]
 	if filename == "" {
 		http.NotFound(w, r)
 		return
 	}
-	f, err := http.Dir(staticDir[1:]).Open(filename)
+	f, err := http.Dir(b.Paths.StaticDir[1:]).Open(filename)
 	if err != nil {
 		fmt.Println(filename + " does not exist")
 	} else {
@@ -28,33 +60,39 @@ func staticHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// /about -> tmpl/about.html
+
 func pageHandler(w http.ResponseWriter, r *http.Request) {
-	// check for empty string
-	filename := blog.Routes[r.URL.Path[1:]]
+	filename := b.Site.Routes[r.URL.Path[1:]]
+	fmt.Println(filename + " requested")
 	if filename == "" {
-		fmt.Println("Unmapped resource " + r.URL.Path)
+		fmt.Println("Unmapped reource " + filename)
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Println(filename)
 	t, err := template.ParseFiles(filename)
 	if err != nil {
 		panic(err)
 	}
-	if err = t.Execute(w, blog); err != nil {
+	if err = t.Execute(w, b); err != nil {
 		fmt.Println(err)
 	}
 }
 
-// TODO: read options from stdin
-// switches:
-// 	-p filename w/ all post metadata in JSON format
-//  -s path to static directory
-//  -r route file
-func main() {
-	blog = NewBlog("routes.json", "posts.json", "localhost/")
-	staticDir = "/static/"
-	http.HandleFunc(staticDir, staticHandler)
+// HOWTO use Blag w/o configuration
+// import "blag"
+// func main() {
+//  blag.Run(blag.NewBlogger("type me if you want to edit"), ":80")
+//}
+
+func Run(blag *Blogger, port string) {
+	b = blag
+	http.HandleFunc(b.Paths.StaticDir, staticHandler)
 	http.HandleFunc("/", pageHandler)
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(port, nil)
+}
+
+func main() {
+	blag := NewBlogger("top kek")
+	Run(blag, ":80")
 }
