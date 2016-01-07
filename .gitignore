@@ -1,2 +1,4 @@
 blag
 .sass-cache/
+*.map
+posts/
