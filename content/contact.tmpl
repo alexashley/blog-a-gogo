@@ -1,9 +1,14 @@
-{{ define "head" }} <title> contact </title> {{ end }}
+---
+title: contact
+blurb: Give me a ring!
+date: 2016-01-07
+---
+{{ define "head" }} <title> {{ .Info.Title }} </title> {{ end }}
 
 {{ define "body" }}
-    <h2 class="article-title"> contact </h2>
+    <h2 class="article-title"> {{ .Info.Title }} </h2>
     <hr>
     <div class="article-box">
     <p> Give me a ring at 555-LOGS </p>
-</div>
+    </div>
 {{ end }}

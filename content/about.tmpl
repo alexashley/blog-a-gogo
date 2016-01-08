@@ -1,7 +1,12 @@
-{{ define "head" }} <title> about </title> {{ end }}
+---
+title: about
+blurb: A brief description of the site
+date: 2016-01-07
+---
+{{ define "head" }} <title> {{ .Info.Title }} </title> {{ end }}
 
 {{ define "body" }} 
-    <h2 class="article-title"> about </h2>
+    <h2 class="article-title"> {{ .Info.Title }} </h2>
     <hr>
     <div class="article-box">
         <p> Something something something ... you should replace this! </p>
