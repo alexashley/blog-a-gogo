@@ -1,8 +1,0 @@
-{
-	"": "tmpl/index.html",
-	"new": "tmpl/new.html",
-    "post": "tmpl/post.html",
-    "blog": "tmpl/blog.html",
-    "about": "tmpl/about.html",
-    "contact": "tmpl/contact.html"
-}
