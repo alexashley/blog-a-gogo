@@ -1,11 +1,11 @@
 # Blog a Gogo
 
-A small static blog generator in Go 
+Yet another static site generator in Go.
 
 ## Usage
 
-A small sample site is included. After building, run `./blag` to see the generated site 
+A small sample site is included. After building, run `./blog-a-gogo` to see the generated site 
 
 ## Configuration
 
-See `./blag -help` 
+See `./blog-a-gogo -help` 
