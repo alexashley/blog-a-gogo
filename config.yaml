@@ -7,3 +7,4 @@ blogtmpl: blog.tmpl # Templates used for list of posts
 postext: .post # Posts should end with this extension
 contentdir: content/ # Posts and static pages go here
 outdir: out/ # Processed files are placed in this directory
+watchfile: dump.yaml # Information from previous runs is stored here

@@ -48,6 +48,7 @@ type Config struct {
 	PostExt    string // Posts should end with this extension
 	ContentDir string // Posts and static pages go here
 	OutDir     string // Processed files are placed in this directory
+	WatchFile  string // Information from previous runs is stored here
 }
 
 type WatchedFile struct {
@@ -196,7 +197,17 @@ func main() {
 	flag.Parse()
 	loadConfig(*config)
 	allFiles = make(map[string]WatchedFile)
-	//	os.RemoveAll(*outDir)
+	// blog-a-gogo has been run before. Load previous state of allFiles
+	if _, err := os.Stat(settings.OutDir); os.IsExist(err) {
+		info, err := ioutil.ReadFile(settings.WatchFile)
+		// ignore any errors, just rebuild allFiles and templates
+		if err == nil {
+			yaml.Unmarshal(info, &allFile)
+		} else {
+			os.RemoveAll(settings.OutDir)
+		}
+	}
+
 	generateSite()
 	generateBlog()
 	if *runServer {
