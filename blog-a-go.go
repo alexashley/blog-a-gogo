@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"flag"
 	"github.com/russross/blackfriday"
+	"gopkg.in/yaml.v2"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
-	//"net/http"
-	"gopkg.in/yaml.v2"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,24 +17,20 @@ import (
 )
 
 var (
-	cssDir     = flag.String("cssDir", "css/", "Directory containing css files")
-	tmplDir    = flag.String("tmplDir", "tmpl/", "Directory containing Go html templates")
-	baseTmpl   = flag.String("base", "base.tmpl", "Master template.")
-	postTmpl   = flag.String("post", "post.tmpl", "Template to be used for blog posts")
-	contentDir = flag.String("contentDir", "content/", "Posts & static pages go here")
-	outDir     = flag.String("outDir", "out/", "Processed pages are output here")
-	watch      = flag.Bool("watch", true, "Watch contentDir for changes")
-	host       = flag.String("host", "localhost", "Hostname")
-	port       = flag.String("port", ":8080", "Port for http.ListenAndServe")
+	config    = flag.String("config", "config.yaml", "Yaml configuration file")
+	watch     = flag.Bool("watch", true, "Watch contentDir for changes")
+	runServer = flag.Bool("runServer", true, "Run server on -host, listening on -port")
+	host      = flag.String("host", "http://localhost:8080/", "Hostname.")
+	port      = flag.String("port", ":8080", "Port for http.ListenAndServe")
 
 	allFiles map[string]WatchedFile
+	settings Config
 )
 
 type Page struct {
-	Info   PageInfo
-	Body   []byte
-	URL    string
-	CSSDir string
+	Info PageInfo
+	Body []byte
+	URL  string
 }
 
 type PageInfo struct {
@@ -43,12 +39,23 @@ type PageInfo struct {
 	Date  string
 }
 
+type Config struct {
+	TmplDir    string // Directory containing Go html templates
+	TmplExt    string // Templates should end with this extension
+	BaseTmpl   string // Master template. Should be in TmplDir
+	PostTmpl   string // Template used for posts
+	BlogTmpl   string // Template used for list of posts
+	PostExt    string // Posts should end with this extension
+	ContentDir string // Posts and static pages go here
+	OutDir     string // Processed files are placed in this directory
+}
+
 type WatchedFile struct {
 	lastSeen time.Time
 }
 
 func renderTemplate(w io.Writer, filename string, p Page) {
-	t := template.Must(template.ParseFiles(filename, *tmplDir+*baseTmpl))
+	t := template.Must(template.ParseFiles(filename, settings.TmplDir+settings.BaseTmpl))
 	if err := t.ExecuteTemplate(w, "base", p); err != nil {
 		log.Fatal(err)
 	}
@@ -82,10 +89,10 @@ func splitFile(filename string) (frontMatter string, content string) {
 }
 
 func getOutputFilename(filename string) string {
-	newPath := strings.TrimPrefix(filename, *contentDir)
-	newPath = strings.TrimSuffix(newPath, ".tmpl")
-	newPath = strings.TrimSuffix(newPath, ".post")
-	return *outDir + newPath + ".html"
+	newPath := strings.TrimPrefix(filename, settings.ContentDir)
+	newPath = strings.TrimSuffix(newPath, settings.TmplExt)
+	newPath = strings.TrimSuffix(newPath, settings.PostExt)
+	return settings.OutDir + newPath + ".html"
 }
 
 func processFile(filename string) {
@@ -93,18 +100,17 @@ func processFile(filename string) {
 	var info PageInfo
 	yaml.Unmarshal([]byte(frontMatter), &info)
 	var b []byte
-	p := Page{info, b, *host, *cssDir}
+	p := Page{info, b, *host}
 	finalFilename := getOutputFilename(filename)
 	output, err := os.Create(finalFilename)
 	defer output.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if strings.Contains(filename, ".post") {
+	if strings.Contains(filename, settings.PostExt) {
 		// parse markdown
 		p.Body = blackfriday.MarkdownCommon([]byte(content))
-		renderTemplate(output, *postTmpl, p)
-		//ioutil.WriteFile(finalFilename, html, 0755)
+		renderTemplate(output, settings.TmplDir+settings.PostTmpl, p)
 
 	} else {
 		// render template
@@ -118,13 +124,7 @@ func processFile(filename string) {
 		if err := ioutil.WriteFile(tmpFile.Name(), []byte(content), 0755); err != nil {
 			log.Fatal(err)
 		}
-		/*finalFilename := getOutputFilename(filename)
-		output, err := os.Create(finalFilename)
-		if err != nil {
-			log.Fatal(err)
-		}*/
 		renderTemplate(output, tmpFile.Name(), p)
-		//output.Close()
 		os.Remove(tmpFile.Name())
 	}
 }
@@ -135,15 +135,15 @@ func isUnchanged(filename string, info os.FileInfo) bool {
 }
 
 func isUnsupported(path string, info os.FileInfo) bool {
-	isTemplate := strings.Contains(path, ".tmpl")
-	isPost := strings.Contains(path, ".post")
+	isTemplate := strings.Contains(path, settings.TmplExt)
+	isPost := strings.Contains(path, settings.PostExt)
 	return !(isTemplate || isPost)
 }
 
 func walkFn(path string, info os.FileInfo, err error) error {
 	if info.IsDir() {
-		if _, err := os.Stat(*outDir + path); os.IsNotExist(err) {
-			err = os.Mkdir(*outDir+info.Name(), 0755)
+		if _, err := os.Stat(settings.OutDir + path); os.IsNotExist(err) {
+			err = os.Mkdir(settings.OutDir+info.Name(), 0755)
 			if err != nil {
 				log.Print(err)
 			}
@@ -160,20 +160,47 @@ func walkFn(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-// generatePosts processes the files in contentDir and places the HTML in outDir
-// *.md -> html -> rendered w/ postTmpl (inherits from baseTmpl)
-// .tmpl -> rendered w/ baseTmpl
 func generateSite() {
-	err := os.Mkdir(*outDir, 0755)
+	err := os.Mkdir(settings.OutDir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
-	filepath.Walk(*contentDir, walkFn)
+	filepath.Walk(settings.ContentDir, walkFn)
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	filename := strings.Trim(r.URL.Path, "/") + ".html"
+	f, err := http.Dir(settings.OutDir).Open(filename)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	file := io.ReadSeeker(f)
+	http.ServeContent(w, r, filename, time.Now(), file)
+}
+
+// get a list o' posts and display 'em
+func generateBlog() {
+
+}
+
+func loadConfig(filename string) {
+	config, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal("Unable to load configuration file")
+	}
+	yaml.Unmarshal(config, &settings)
 }
 
 func main() {
 	flag.Parse()
+	loadConfig(*config)
 	allFiles = make(map[string]WatchedFile)
 	//	os.RemoveAll(*outDir)
 	generateSite()
+	generateBlog()
+	if *runServer {
+		http.HandleFunc("/", handler)
+		http.ListenAndServe(*port, nil)
+	}
 }

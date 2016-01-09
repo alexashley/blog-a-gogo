@@ -1,14 +1,12 @@
 {{ define "head" }} 
-    {{ $post := index .Site.Posts .CurrID }}  
-    <title> {{ $post.Title }} </title> 
+    <title> {{ .Info.Title }} </title> 
 {{ end }}
 
 {{ define "body" }} 
-    {{ $post := index .Site.Posts .CurrID }}  
-    <h2 class="article-title"> {{ $post.Title }} </h2>
+    <h2 class="article-title"> {{ .Info.Title }} </h2>
     <hr>
     <div class="article-box">
-        {{$post.Body}}
+        {{printf "%s" .Body }}
     </div>
 
 {{ end }}

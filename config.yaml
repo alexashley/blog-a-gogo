@@ -1,0 +1,9 @@
+---
+tmpldir: tmpl/ # Directory containing Go templates
+tmplext: .tmpl # Templates should end with this extension
+basetmpl: base.tmpl # Master template. Should be in TmplDir
+posttmpl: post.tmpl # Template used for posts
+blogtmpl: blog.tmpl # Templates used for list of posts
+postext: .post # Posts should end with this extension
+contentdir: content/ # Posts and static pages go here
+outdir: out/ # Processed files are placed in this directory
