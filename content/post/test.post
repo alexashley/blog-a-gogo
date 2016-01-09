@@ -3,8 +3,8 @@ title: My First Post
 blurb: This is my very first post. 
 date: 2016-01-07
 ---
-#This is a BIG heading
+# This is a BIG heading
 
-- this is my list
-- here's more list
-- LIST LIST LIST
+-  this is my list
+-  here's more list
+-  LIST LIST LIST

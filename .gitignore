@@ -1,3 +1,5 @@
 blog-a-gogo
 .sass-cache/
+out/
 *.map
+dump.yml

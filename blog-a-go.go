@@ -17,19 +17,19 @@ import (
 )
 
 var (
-	config    = flag.String("config", "config.yaml", "Yaml configuration file")
+	config    = flag.String("config", "config.yml", "Yaml configuration file")
 	watch     = flag.Bool("watch", true, "Watch contentDir for changes")
 	runServer = flag.Bool("runServer", true, "Run server on -host, listening on -port")
 	host      = flag.String("host", "http://localhost:8080/", "Hostname.")
 	port      = flag.String("port", ":8080", "Port for http.ListenAndServe")
 
-	allFiles map[string]WatchedFile
+	allFiles map[string]string
 	settings Config
 )
 
 type Page struct {
 	Info PageInfo
-	Body []byte
+	Body template.HTML
 	URL  string
 }
 
@@ -51,14 +51,17 @@ type Config struct {
 	WatchFile  string // Information from previous runs is stored here
 }
 
-type WatchedFile struct {
-	lastSeen time.Time
-}
+/*type WatchedFile struct {
+	lastSeen string
+}*/
 
 func renderTemplate(w io.Writer, filename string, p Page) {
-	t := template.Must(template.ParseFiles(filename, settings.TmplDir+settings.BaseTmpl))
+	out := settings.TmplDir + settings.BaseTmpl
+	t := template.Must(template.ParseFiles(filename, out))
 	if err := t.ExecuteTemplate(w, "base", p); err != nil {
 		log.Fatal(err)
+	} else {
+		log.Print("Rendered " + filename + " to " + out)
 	}
 }
 
@@ -100,8 +103,7 @@ func processFile(filename string) {
 	frontMatter, content := splitFile(filename)
 	var info PageInfo
 	yaml.Unmarshal([]byte(frontMatter), &info)
-	var b []byte
-	p := Page{info, b, *host}
+	p := Page{info, "", *host}
 	finalFilename := getOutputFilename(filename)
 	output, err := os.Create(finalFilename)
 	defer output.Close()
@@ -110,7 +112,7 @@ func processFile(filename string) {
 	}
 	if strings.Contains(filename, settings.PostExt) {
 		// parse markdown
-		p.Body = blackfriday.MarkdownCommon([]byte(content))
+		p.Body = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
 		renderTemplate(output, settings.TmplDir+settings.PostTmpl, p)
 
 	} else {
@@ -131,8 +133,9 @@ func processFile(filename string) {
 }
 
 func isUnchanged(filename string, info os.FileInfo) bool {
-	f, ok := allFiles[filename]
-	return ok && f.lastSeen.Equal(info.ModTime())
+	lastSeen, ok := allFiles[filename]
+	modTime := info.ModTime().Format(time.RFC1123)
+	return ok && (lastSeen == modTime)
 }
 
 func isUnsupported(path string, info os.FileInfo) bool {
@@ -143,7 +146,7 @@ func isUnsupported(path string, info os.FileInfo) bool {
 
 func walkFn(path string, info os.FileInfo, err error) error {
 	if info.IsDir() {
-		if _, err := os.Stat(settings.OutDir + path); os.IsNotExist(err) {
+		if _, err := os.Stat(settings.OutDir + info.Name()); os.IsNotExist(err) {
 			err = os.Mkdir(settings.OutDir+info.Name(), 0755)
 			if err != nil {
 				log.Print(err)
@@ -156,17 +159,22 @@ func walkFn(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 	processFile(path)
-	allFiles[path] = WatchedFile{lastSeen: info.ModTime()}
+	allFiles[path] = info.ModTime().Format(time.RFC1123)
 
 	return nil
 }
 
 func generateSite() {
-	err := os.Mkdir(settings.OutDir, 0755)
-	if err != nil {
-		log.Fatal(err)
+	if _, err := os.Stat(settings.OutDir); os.IsNotExist(err) {
+		err := os.Mkdir(settings.OutDir, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	filepath.Walk(settings.ContentDir, walkFn)
+	info, err := yaml.Marshal(&allFiles)
+	log.Print(err)
+	ioutil.WriteFile(settings.WatchFile, info, 0664)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -196,22 +204,21 @@ func loadConfig(filename string) {
 func main() {
 	flag.Parse()
 	loadConfig(*config)
-	allFiles = make(map[string]WatchedFile)
+	allFiles = make(map[string]string)
 	// blog-a-gogo has been run before. Load previous state of allFiles
-	if _, err := os.Stat(settings.OutDir); os.IsExist(err) {
+	if _, err := os.Stat(settings.WatchFile); err == nil {
 		info, err := ioutil.ReadFile(settings.WatchFile)
 		// ignore any errors, just rebuild allFiles and templates
 		if err == nil {
-			yaml.Unmarshal(info, &allFile)
+			yaml.Unmarshal(info, &allFiles)
 		} else {
 			os.RemoveAll(settings.OutDir)
 		}
 	}
-
 	generateSite()
 	generateBlog()
-	if *runServer {
+	/*if *runServer {
 		http.HandleFunc("/", handler)
 		http.ListenAndServe(*port, nil)
-	}
+	}*/
 }
