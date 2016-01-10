@@ -23,7 +23,7 @@ var (
 	host      = flag.String("host", "http://localhost:8080/", "Hostname.")
 	port      = flag.String("port", ":8080", "Port for http.ListenAndServe")
 
-	allFiles map[string]string
+	allFiles map[string]TrackedFile
 	settings Config
 )
 
@@ -39,6 +39,11 @@ type PageInfo struct {
 	Date  string
 }
 
+type TrackedFile struct {
+	Content  Page
+	LastSeen string
+}
+
 type Config struct {
 	TmplDir    string // Directory containing Go html templates
 	TmplExt    string // Templates should end with this extension
@@ -51,17 +56,13 @@ type Config struct {
 	WatchFile  string // Information from previous runs is stored here
 }
 
-/*type WatchedFile struct {
-	lastSeen string
-}*/
-
-func renderTemplate(w io.Writer, filename string, p Page) {
-	out := settings.TmplDir + settings.BaseTmpl
-	t := template.Must(template.ParseFiles(filename, out))
-	if err := t.ExecuteTemplate(w, "base", p); err != nil {
+func renderTemplate(w io.Writer, filename string, v interface{}) {
+	base := settings.TmplDir + settings.BaseTmpl
+	t := template.Must(template.ParseFiles(filename, base))
+	if err := t.ExecuteTemplate(w, "base", v); err != nil {
 		log.Fatal(err)
 	} else {
-		log.Print("Rendered " + filename + " to " + out)
+		log.Print("Rendered " + filename)
 	}
 }
 
@@ -99,7 +100,7 @@ func getOutputFilename(filename string) string {
 	return settings.OutDir + newPath + ".html"
 }
 
-func processFile(filename string) {
+func processFile(filename string) Page {
 	frontMatter, content := splitFile(filename)
 	var info PageInfo
 	yaml.Unmarshal([]byte(frontMatter), &info)
@@ -130,12 +131,13 @@ func processFile(filename string) {
 		renderTemplate(output, tmpFile.Name(), p)
 		os.Remove(tmpFile.Name())
 	}
+	return p
 }
 
 func isUnchanged(filename string, info os.FileInfo) bool {
-	lastSeen, ok := allFiles[filename]
+	trackedFile, ok := allFiles[filename]
 	modTime := info.ModTime().Format(time.RFC1123)
-	return ok && (lastSeen == modTime)
+	return ok && (trackedFile.LastSeen == modTime)
 }
 
 func isUnsupported(path string, info os.FileInfo) bool {
@@ -154,12 +156,11 @@ func walkFn(path string, info os.FileInfo, err error) error {
 		}
 		return nil
 	}
-	// unchanged and unsupported files
 	if isUnsupported(path, info) || isUnchanged(path, info) {
 		return nil
 	}
-	processFile(path)
-	allFiles[path] = info.ModTime().Format(time.RFC1123)
+	p := processFile(path)
+	allFiles[path] = TrackedFile{p, info.ModTime().Format(time.RFC1123)}
 
 	return nil
 }
@@ -172,14 +173,25 @@ func generateSite() {
 		}
 	}
 	filepath.Walk(settings.ContentDir, walkFn)
-	info, err := yaml.Marshal(&allFiles)
-	log.Print(err)
+	info, _ := yaml.Marshal(&allFiles)
 	ioutil.WriteFile(settings.WatchFile, info, 0664)
+	generateBlog()
+}
+
+func doesExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	filename := strings.Trim(r.URL.Path, "/") + ".html"
-	f, err := http.Dir(settings.OutDir).Open(filename)
+	filename := strings.Trim(r.URL.Path, "/")
+	outf := settings.OutDir + filename + ".html"
+	// if the file is tracked, load it from the out directory
+	if doesExist(outf) {
+		filename = outFilename
+	}
+	log.Print(filename + " requested")
+	f, err := http.Dir("").Open(filename)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -188,9 +200,30 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, filename, time.Now(), file)
 }
 
-// get a list o' posts and display 'em
-func generateBlog() {
+type Blog struct {
+	Pages []Page
+	URL   string
+}
 
+// get a list o' posts and organize them
+func generateBlog() {
+	pages := make([]Page, 0)
+	for filename, p := range allFiles {
+		if strings.Contains(filename, settings.PostExt) {
+			pages = append(pages, p.Content)
+		}
+	}
+	finalFilename := getOutputFilename(settings.BlogTmpl)
+	if _, err := os.Stat(finalFilename); err == nil {
+		os.Remove(finalFilename)
+	}
+	f, e := os.Create(finalFilename)
+	if e != nil {
+		log.Fatal(e)
+	}
+	defer f.Close()
+	b := Blog{pages, *host}
+	renderTemplate(f, settings.TmplDir+settings.BlogTmpl, b)
 }
 
 func loadConfig(filename string) {
@@ -204,7 +237,7 @@ func loadConfig(filename string) {
 func main() {
 	flag.Parse()
 	loadConfig(*config)
-	allFiles = make(map[string]string)
+	allFiles = make(map[string]TrackedFile)
 	// blog-a-gogo has been run before. Load previous state of allFiles
 	if _, err := os.Stat(settings.WatchFile); err == nil {
 		info, err := ioutil.ReadFile(settings.WatchFile)
@@ -216,9 +249,8 @@ func main() {
 		}
 	}
 	generateSite()
-	generateBlog()
-	/*if *runServer {
+	if *runServer {
 		http.HandleFunc("/", handler)
 		http.ListenAndServe(*port, nil)
-	}*/
+	}
 }

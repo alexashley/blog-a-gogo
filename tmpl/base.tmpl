@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    {{ template "head" . }} 
-    <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="{{ .URL }}css/style.css" type="text/css">
+    {{ template "head" . }}
 </head>
 <body>
 <div id="nav">

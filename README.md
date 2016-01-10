@@ -2,6 +2,11 @@
 
 Yet another static site generator in Go.
 
+## To-Do
+- Track template files
+- Periodically scan content directory
+- REFACTOR: separate site generator from server
+
 ## Dependencies
 
 - [YAML](https://github.com/go-yaml/yaml) 

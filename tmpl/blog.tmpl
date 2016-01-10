@@ -1,0 +1,13 @@
+{{ define "head" }}
+    <title> REEE </title>
+    <link rel="stylesheet", href="{{ .URL }}css/blog.css" type="text/css">
+{{ end }}
+
+{{ define "body" }}
+    {{ range .Pages }}
+    <div class="listing">
+    <h2 class="article-title"> {{ .Info.Title }} </h2>
+        {{ .Info.Blurb }}
+    </div>
+    {{ end }}
+{{ end }}
