@@ -11,7 +11,7 @@ A static site generator and content tracker written in Go.
 
 A small sample site is included. After building, run `./blog-a-gogo` to see the generated site running on port 8080 
 
-Blog posts should use the extension `.post` and Markdown syntax. You can give Blog a Gogo some information about files in the files under the content directory by using a YAML block at the start of the file (aka, front matter). 
+Blog posts should use the extension `.post` and Markdown syntax. You can give Blog a Gogo some information about files in the content directory by using a YAML block at the start of the file (aka, front matter). 
 
 ```yaml
 ---
