@@ -18,7 +18,8 @@ import (
 
 var (
 	config    = flag.String("config", "config.yml", "Yaml configuration file")
-	watch     = flag.Bool("watch", true, "Watch contentDir for changes")
+	clean     = flag.Bool("clean", false, "Remove outDir and dump file before running")
+	watch     = flag.Bool("watch", false, "Watch contentDir for changes")
 	runServer = flag.Bool("runServer", true, "Run server on -host, listening on -port")
 	host      = flag.String("host", "http://localhost:8080/", "Hostname.")
 	port      = flag.String("port", ":8080", "Port for http.ListenAndServe")
@@ -28,9 +29,10 @@ var (
 )
 
 type Page struct {
-	Info PageInfo
-	Body template.HTML
-	URL  string
+	Info    PageInfo
+	Body    template.HTML
+	URL     string // from the host flag
+	RelPath string // initialized for posts only
 }
 
 type PageInfo struct {
@@ -49,6 +51,7 @@ type Config struct {
 	TmplExt    string // Templates should end with this extension
 	BaseTmpl   string // Master template. Should be in TmplDir
 	PostTmpl   string // Template used for posts
+	IndexTmpl  string // Template for /
 	BlogTmpl   string // Template used for list of posts
 	PostExt    string // Posts should end with this extension
 	ContentDir string // Posts and static pages go here
@@ -100,11 +103,16 @@ func getOutputFilename(filename string) string {
 	return settings.OutDir + newPath + ".html"
 }
 
+func stripDirectories(filename string) string {
+	path := strings.Split(filename, "/")
+	return path[len(path)-1]
+}
+
 func processFile(filename string) Page {
 	frontMatter, content := splitFile(filename)
 	var info PageInfo
 	yaml.Unmarshal([]byte(frontMatter), &info)
-	p := Page{info, "", *host}
+	p := Page{info, "", *host, ""}
 	finalFilename := getOutputFilename(filename)
 	output, err := os.Create(finalFilename)
 	defer output.Close()
@@ -112,14 +120,16 @@ func processFile(filename string) Page {
 		log.Fatal(err)
 	}
 	if strings.Contains(filename, settings.PostExt) {
-		// parse markdown
+		// parse markdown, render post template
 		p.Body = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
+		p.RelPath = getOutputFilename(filename)
+		p.RelPath = strings.Replace(p.RelPath, ".html", "", 1)
+		p.RelPath = strings.Replace(p.RelPath, settings.OutDir, "", 1)
 		renderTemplate(output, settings.TmplDir+settings.PostTmpl, p)
 
 	} else {
 		// render template
-		path := strings.Split(filename, "/")
-		tmpPrefix := path[len(path)-1]
+		tmpPrefix := stripDirectories(filename)
 		tmpFile, err := ioutil.TempFile("", tmpPrefix)
 		if err != nil {
 			log.Fatal(err)
@@ -187,8 +197,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	filename := strings.Trim(r.URL.Path, "/")
 	outf := settings.OutDir + filename + ".html"
 	// if the file is tracked, load it from the out directory
+	if filename == "" {
+		filename = settings.OutDir + "index.html"
+	}
 	if doesExist(outf) {
-		filename = outFilename
+		filename = outf
 	}
 	log.Print(filename + " requested")
 	f, err := http.Dir("").Open(filename)
@@ -237,6 +250,10 @@ func loadConfig(filename string) {
 func main() {
 	flag.Parse()
 	loadConfig(*config)
+	if *clean {
+		os.RemoveAll(settings.OutDir)
+		os.Remove(settings.WatchFile)
+	}
 	allFiles = make(map[string]TrackedFile)
 	// blog-a-gogo has been run before. Load previous state of allFiles
 	if _, err := os.Stat(settings.WatchFile); err == nil {
@@ -249,6 +266,14 @@ func main() {
 		}
 	}
 	generateSite()
+	if *watch {
+		ticker := time.NewTicker(time.Second * 5)
+		go func() {
+			for _ = range ticker.C {
+				generateSite()
+			}
+		}()
+	}
 	if *runServer {
 		http.HandleFunc("/", handler)
 		http.ListenAndServe(*port, nil)

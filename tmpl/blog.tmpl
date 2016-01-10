@@ -6,8 +6,10 @@
 {{ define "body" }}
     {{ range .Pages }}
     <div class="listing">
+    <a href="{{ .RelPath }}">
     <h2 class="article-title"> {{ .Info.Title }} </h2>
-        {{ .Info.Blurb }}
+    <p> {{ .Info.Blurb }} </p>
+    </a>
     </div>
     {{ end }}
 {{ end }}
