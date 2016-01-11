@@ -1,14 +1,14 @@
 {{ define "head" }}
     <title> REEE </title>
-    <link rel="stylesheet", href="{{ .URL }}css/blog.css" type="text/css">
+    <link rel="stylesheet", href="/css/blog.css" type="text/css">
 {{ end }}
 
 {{ define "body" }}
-    {{ range .Pages }}
+    {{ range . }}
     <div class="listing">
-    <a href="{{ .RelPath }}">
-    <h2 class="article-title"> {{ .Info.Title }} </h2>
-    <p> {{ .Info.Blurb }} </p>
+    <a href="{{ .Path }}">
+    <h2 class="article-title"> {{ .Title }} </h2>
+    <p> {{ .Blurb }} </p>
     </a>
     </div>
     {{ end }}
