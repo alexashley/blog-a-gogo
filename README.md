@@ -30,4 +30,3 @@ See `./blog-a-gogo -help` and `config.yml` for configuration options.
 ## To-Do
 - Unit testing
 - Track the template directory
-- Refactoring: Separate site generator/tracking from the server logic
