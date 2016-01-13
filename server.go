@@ -12,7 +12,7 @@ import (
 var (
 	config    = flag.String("config", "config.yml", "YAML configuration file")
 	clean     = flag.Bool("clean", false, "Remove all files from previous runs.")
-	port      = flag.String("port", ":8080", "port number")
+	port      = flag.String("port", "8080", "port number")
 	runServer = flag.Bool("runServer", false, "Run server on -port")
 	site      Generator
 )
@@ -48,6 +48,6 @@ func init() {
 func main() {
 	if *runServer {
 		http.HandleFunc("/", handler)
-		http.ListenAndServe(*port, nil)
+		http.ListenAndServe(":"+*port, nil)
 	}
 }
