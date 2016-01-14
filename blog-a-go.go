@@ -61,7 +61,6 @@ func NewGenerator(configName string, shouldClean bool) (Generator, error) {
 	if err != nil {
 		return g, err
 	}
-	//var c Config
 	if err = yaml.Unmarshal(config, &g.Settings); err != nil {
 		return g, err
 	}
@@ -278,6 +277,13 @@ func (g *Generator) makeVisit() func(string, os.FileInfo, error) error {
 // generate simply begins the walk through the filesystem and dumps the results
 // into a file if there have been any changes
 func (g *Generator) generate() {
+	for fname, _ := range g.TrackedFiles {
+		if !doesExist(fname) {
+			delete(g.TrackedFiles, fname)
+			log.Print("Stopped tracking " + fname)
+		}
+	}
+
 	if _, err := os.Stat(g.Settings.OutDir); os.IsNotExist(err) {
 		err := os.Mkdir(g.Settings.OutDir, 0755)
 		if err != nil {
